@@ -1,58 +1,7 @@
 import * as console from 'console';
-
-class TestSuite {
-  private tests: TestCase[] = [];
-
-  public add(test: TestCase) {
-    this.tests.push(test);
-  }
-
-  public run(result: TestResult): void {
-    for (const test of this.tests) {
-      test.run(result);
-    }
-  }
-}
-
-class TestResult {
-  private runCount = 0;
-  private failedCount = 0;
-
-  public testStarted(): void {
-    this.runCount++;
-  }
-
-  public testFailed(): void {
-    this.failedCount++;
-  }
-
-  public summary(): string {
-    return `${this.runCount} run, ${this.failedCount} failed`;
-  }
-}
-
-abstract class TestCase {
-  [key: string]: unknown;
-  constructor(private name: string) {}
-
-  public run(result: TestResult): void {
-    const method = this[this.name];
-    if (typeof method === 'function') {
-      result.testStarted();
-      this.setUp();
-      try {
-        method.bind(this)();
-      } catch (e) {
-        result.testFailed();
-      } finally {
-        this.tearDown();
-      }
-    }
-  }
-
-  protected abstract setUp(): void;
-  protected abstract tearDown(): void;
-}
+import {TestResult} from './testingLib/TestResult';
+import {TestCase} from './testingLib/TestCase';
+import {TestSuite} from './testingLib/TestSuite';
 
 class WasRun extends TestCase {
   public log: string = '';
