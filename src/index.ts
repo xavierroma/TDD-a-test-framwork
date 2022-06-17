@@ -2,12 +2,18 @@ import * as console from 'console';
 
 class TestResult {
   private runCount = 0;
+  private failedCount = 0;
 
   public testStarted(): void {
     this.runCount++;
   }
+
+  public testFailed(): void {
+    this.failedCount++;
+  }
+
   public summary(): string {
-    return `${this.runCount} run, 0 failed`;
+    return `${this.runCount} run, ${this.failedCount} failed`;
   }
 }
 
@@ -20,8 +26,13 @@ abstract class TestCase {
     if (typeof method === 'function') {
       result.testStarted();
       this.setUp();
-      method.bind(this)();
-      this.tearDown();
+      try {
+        method.bind(this)();
+      } catch (e) {
+        result.testFailed();
+      } finally {
+        this.tearDown();
+      }
     }
     return result;
   }
@@ -39,6 +50,10 @@ class WasRun extends TestCase {
 
   public testMethod() {
     this.log += 'testMethod ';
+  }
+
+  public testBrokenMethod() {
+    throw Error('ERRRO');
   }
 
   protected setUp() {
@@ -71,7 +86,14 @@ class TestCaseTest extends TestCase {
     const result = test.run();
     console.assert('1 run, 0 failed' == result.summary());
   }
+
+  public testFailedResult() {
+    const test = new WasRun('testBrokenMethod');
+    const result = test.run();
+    console.assert('1 run, 1 failed' == result.summary());
+  }
 }
 
-new TestCaseTest('testTemplateMethod').run();
-new TestCaseTest('testResult').run();
+console.log(new TestCaseTest('testTemplateMethod').run().summary());
+console.log(new TestCaseTest('testResult').run().summary());
+console.log(new TestCaseTest('testFailedResult').run().summary());
