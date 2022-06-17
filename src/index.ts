@@ -8,10 +8,12 @@ abstract class TestCase {
     if (typeof method === 'function') {
       this.setUp();
       method.bind(this)();
+      this.tearDown();
     }
   }
 
   protected abstract setUp(): void;
+  protected abstract tearDown(): void;
 }
 
 class WasRun extends TestCase {
@@ -28,17 +30,25 @@ class WasRun extends TestCase {
   protected setUp() {
     this.log = 'setUp ';
   }
+
+  protected tearDown() {
+    this.log += 'tearDown ';
+  }
 }
 
 class TestCaseTest extends TestCase {
   protected setUp() {}
+  protected tearDown() {}
 
   public testTemplateMethod() {
     const test = new WasRun('testMethod');
     test.run();
     console.assert(
-      'setUp testMethod ' === test.log,
-      'Invalid methods invocation order'
+      'setUp testMethod tearDown ' === test.log,
+      `Invalid methods invocation order
+      Expected 'setUp testMethod tearDown '
+      Received '${test.log}'
+        `
     );
   }
 }
