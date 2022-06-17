@@ -15,40 +15,32 @@ abstract class TestCase {
 }
 
 class WasRun extends TestCase {
-  public wasRun: boolean = false;
-  public wasSetUp: boolean = false;
+  public log: string = '';
 
   constructor(name: string) {
     super(name);
   }
 
   public testMethod() {
-    this.wasRun = true;
+    this.log += 'testMethod ';
   }
 
   protected setUp() {
-    this.wasSetUp = true;
+    this.log = 'setUp ';
   }
 }
 
 class TestCaseTest extends TestCase {
-  private test!: WasRun;
+  protected setUp() {}
 
-  protected setUp() {
-    this.test = new WasRun('testMethod');
-  }
-
-  public testRunning() {
-    console.assert(!this.test.wasRun);
-    this.test.run();
-    console.assert(this.test.wasRun);
-  }
-
-  public testSetUp() {
-    this.test.run();
-    console.assert(this.test.wasSetUp, 'test not set up');
+  public testTemplateMethod() {
+    const test = new WasRun('testMethod');
+    test.run();
+    console.assert(
+      'setUp testMethod ' === test.log,
+      'Invalid methods invocation order'
+    );
   }
 }
 
-new TestCaseTest('testRunning').run();
-new TestCaseTest('testSetUp').run();
+new TestCaseTest('testTemplateMethod').run();
