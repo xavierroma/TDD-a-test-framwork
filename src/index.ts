@@ -1,5 +1,19 @@
 import * as console from 'console';
 
+class TestSuite {
+  private tests: TestCase[] = [];
+
+  public add(test: TestCase) {
+    this.tests.push(test);
+  }
+
+  public run(result: TestResult): void {
+    for (const test of this.tests) {
+      test.run(result);
+    }
+  }
+}
+
 class TestResult {
   private runCount = 0;
   private failedCount = 0;
@@ -20,8 +34,8 @@ class TestResult {
 abstract class TestCase {
   [key: string]: unknown;
   constructor(private name: string) {}
-  public run(): TestResult {
-    const result = new TestResult();
+
+  public run(result: TestResult): void {
     const method = this[this.name];
     if (typeof method === 'function') {
       result.testStarted();
@@ -34,7 +48,6 @@ abstract class TestCase {
         this.tearDown();
       }
     }
-    return result;
   }
 
   protected abstract setUp(): void;
@@ -66,12 +79,15 @@ class WasRun extends TestCase {
 }
 
 class TestCaseTest extends TestCase {
-  protected setUp() {}
+  private result!: TestResult;
+  protected setUp() {
+    this.result = new TestResult();
+  }
   protected tearDown() {}
 
   public testTemplateMethod() {
     const test = new WasRun('testMethod');
-    test.run();
+    test.run(new TestResult());
     console.assert(
       'setUp testMethod tearDown ' === test.log,
       `Invalid methods invocation order
@@ -83,17 +99,30 @@ class TestCaseTest extends TestCase {
 
   public testResult() {
     const test = new WasRun('testMethod');
-    const result = test.run();
-    console.assert('1 run, 0 failed' == result.summary());
+    test.run(this.result);
+    console.assert('1 run, 0 failed' == this.result.summary());
   }
 
   public testFailedResult() {
     const test = new WasRun('testBrokenMethod');
-    const result = test.run();
-    console.assert('1 run, 1 failed' == result.summary());
+    test.run(this.result);
+    console.assert('1 run, 1 failed' == this.result.summary());
+  }
+
+  public testSuite() {
+    const suite = new TestSuite();
+    suite.add(new WasRun('testMethod'));
+    suite.add(new WasRun('testBrokenMethod'));
+    suite.run(this.result);
+    console.assert('2 run, 1 failed' == this.result.summary());
   }
 }
 
-console.log(new TestCaseTest('testTemplateMethod').run().summary());
-console.log(new TestCaseTest('testResult').run().summary());
-console.log(new TestCaseTest('testFailedResult').run().summary());
+const suite = new TestSuite();
+suite.add(new TestCaseTest('testTemplateMethod'));
+suite.add(new TestCaseTest('testResult'));
+suite.add(new TestCaseTest('testFailedResult'));
+suite.add(new TestCaseTest('testSuite'));
+const result = new TestResult();
+suite.run(result);
+console.log(result.summary());
